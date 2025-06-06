@@ -171,7 +171,7 @@ export default function MindMap() {
                     }}
                   >
                     {/* Connection lines */}
-                   {connection && connection.from && connection.to && (
+                  {connection && (
   <line
     key={idx}
     x1={connection.from.x + 80}
