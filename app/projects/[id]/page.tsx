@@ -64,22 +64,24 @@ const projectData = {
 };
 
 export default function ProjectDetail() {
-  const params = useParams();
-  const projectId = params.id as string;
-  const project = projectData[projectId as keyof typeof projectData];
+const params = useParams();
+const projectId = typeof params?.id === 'string' ? params.id : null;
 
-  if (!project) {
-    return (
-      <DashboardLayout>
-        <div className="text-center py-12">
-          <h2 className="text-xl font-semibold text-gray-900">Project not found</h2>
-          <Link href="/projects" className="text-blue-600 hover:underline mt-2 inline-block">
-            Back to Projects
-          </Link>
-        </div>
-      </DashboardLayout>
-    );
-  }
+if (!projectId) {
+  return (
+    <DashboardLayout>
+      <div className="text-center py-12">
+        <h2 className="text-xl font-semibold text-gray-900">Invalid Project ID</h2>
+        <Link href="/projects" className="text-blue-600 hover:underline mt-2 inline-block">
+          Back to Projects
+        </Link>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+const project = projectData[projectId as keyof typeof projectData];
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
