@@ -171,17 +171,19 @@ export default function MindMap() {
                     }}
                   >
                     {/* Connection lines */}
-                  {connection && (
-  <line
-    key={idx}
-    x1={connection.from.x + 80}
-    y1={connection.from.y + 40}
-    x2={connection.to.x}
-    y2={connection.to.y + 40}
-    stroke="#ccc"
-    strokeWidth={2}
-  />
-)}
+                  {connections
+  ?.filter((connection) => connection !== null)
+  .map((connection, idx) => (
+    <line
+      key={idx}
+      x1={connection.from.x + 80}
+      y1={connection.from.y + 40}
+      x2={connection.to.x}
+      y2={connection.to.y + 40}
+      stroke="#ccc"
+      strokeWidth={2}
+    />
+))}
                     {/* Trust nodes */}
                     {mindMapData.trusts.map(trust => (
                       <g key={trust.id}>
