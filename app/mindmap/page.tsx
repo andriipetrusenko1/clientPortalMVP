@@ -1,23 +1,31 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Building2, 
-  Briefcase, 
-  FileText, 
-  ZoomIn, 
-  ZoomOut, 
+import {
+  Building2,
+  Briefcase,
+  FileText,
+  ZoomIn,
+  ZoomOut,
   Maximize,
   TrendingUp,
-  Users,
-  Calendar
+  Users
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/dashboard-layout';
 
-// Mock data for the mind map
+// Define Types
+type Position = { x: number; y: number };
+
+type Connection = {
+  from: Position;
+  to: Position;
+  type: 'trust-entity' | 'entity-project';
+};
+
+// Mock Data
 const mindMapData = {
   trusts: [
     {
@@ -109,28 +117,32 @@ export default function MindMap() {
   };
 
   // Generate connections between nodes
-  const connections = [
-    // Trust to Entity connections
+  const connections: Connection[] = [
+    // Trust -> Entity
     ...mindMapData.trusts.flatMap(trust =>
       trust.entities.map(entityId => {
         const entity = mindMapData.entities.find(e => e.id === entityId);
-        return entity ? {
-          from: trust.position,
-          to: entity.position,
-          type: 'trust-entity'
-        } : null;
-      }).filter(Boolean)
+        return entity
+          ? {
+              from: trust.position,
+              to: entity.position,
+              type: 'trust-entity'
+            }
+          : null;
+      }).filter(Boolean) as Connection[]
     ),
-    // Entity to Project connections
+    // Entity -> Project
     ...mindMapData.entities.flatMap(entity =>
       entity.projects.map(projectId => {
         const project = mindMapData.projects.find(p => p.id === projectId);
-        return project ? {
-          from: entity.position,
-          to: project.position,
-          type: 'entity-project'
-        } : null;
-      }).filter(Boolean)
+        return project
+          ? {
+              from: entity.position,
+              to: project.position,
+              type: 'entity-project'
+            }
+          : null;
+      }).filter(Boolean) as Connection[]
     )
   ];
 
@@ -157,7 +169,7 @@ export default function MindMap() {
         </div>
 
         <div className="grid lg:grid-cols-4 gap-6">
-          {/* Mind Map Visualization */}
+          {/* Mind Map SVG */}
           <div className="lg:col-span-3">
             <Card className="h-[600px]">
               <CardContent className="p-0 h-full">
@@ -171,20 +183,25 @@ export default function MindMap() {
                     }}
                   >
                     {/* Connection lines */}
-                  {connections
-  ?.filter((connection) => connection !== null)
-  .map((connection, idx) => (
-    <line
-      key={idx}
-      x1={connection.from.x + 80}
-      y1={connection.from.y + 40}
-      x2={connection.to.x}
-      y2={connection.to.y + 40}
-      stroke="#ccc"
-      strokeWidth={2}
-    />
-))}
-                    {/* Trust nodes */}
+                    {connections.length > 0 ? (
+                      connections.map((connection, idx) => (
+                        <line
+                          key={idx}
+                          x1={connection.from.x + 80}
+                          y1={connection.from.y + 40}
+                          x2={connection.to.x}
+                          y2={connection.to.y + 40}
+                          stroke="#ccc"
+                          strokeWidth={2}
+                        />
+                      ))
+                    ) : (
+                      <text x={500} y={300} textAnchor="middle" fill="#999">
+                        No connections available
+                      </text>
+                    )}
+
+                    {/* Trust Nodes */}
                     {mindMapData.trusts.map(trust => (
                       <g key={trust.id}>
                         <rect
@@ -224,7 +241,7 @@ export default function MindMap() {
                       </g>
                     ))}
 
-                    {/* Entity nodes */}
+                    {/* Entity Nodes */}
                     {mindMapData.entities.map(entity => (
                       <g key={entity.id}>
                         <rect
@@ -264,54 +281,80 @@ export default function MindMap() {
                       </g>
                     ))}
 
-                    {/* Project nodes */}
-                    {mindMapData.projects.map(project => (
-                      <g key={project.id}>
-                        <rect
-                          x={project.position.x}
-                          y={project.position.y}
-                          width="160"
-                          height="80"
-                          rx="8"
-                          fill={project.status === 'completed' ? '#d1fae5' : project.status === 'in-progress' ? '#fef3c7' : '#fee2e2'}
-                          stroke={project.status === 'completed' ? '#10b981' : project.status === 'in-progress' ? '#f59e0b' : '#ef4444'}
-                          strokeWidth="2"
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => setSelectedNode(project.id)}
-                        />
-                        <text
-                          x={project.position.x + 80}
-                          y={project.position.y + 25}
-                          textAnchor="middle"
-                          className="text-sm font-semibold"
-                          fill={project.status === 'completed' ? '#065f46' : project.status === 'in-progress' ? '#92400e' : '#991b1b'}
-                        >
-                          {project.name}
-                        </text>
-                        <text
-                          x={project.position.x + 80}
-                          y={project.position.y + 45}
-                          textAnchor="middle"
-                          className="text-xs"
-                          fill={project.status === 'completed' ? '#065f46' : project.status === 'in-progress' ? '#92400e' : '#991b1b'}
-                        >
-                          {project.progress}% Complete
-                        </text>
-                        <circle
-                          cx={project.position.x + 140}
-                          cy={project.position.y + 20}
-                          r="6"
-                          fill={project.status === 'completed' ? '#10b981' : project.status === 'in-progress' ? '#f59e0b' : '#ef4444'}
-                        />
-                      </g>
-                    ))}
+                    {/* Project Nodes */}
+                    {mindMapData.projects.map(project => {
+                      const colorMap = {
+                        completed: {
+                          fill: '#d1fae5',
+                          stroke: '#10b981',
+                          text: '#065f46'
+                        },
+                        'in-progress': {
+                          fill: '#fef3c7',
+                          stroke: '#f59e0b',
+                          text: '#92400e'
+                        },
+                        pending: {
+                          fill: '#fee2e2',
+                          stroke: '#ef4444',
+                          text: '#991b1b'
+                        },
+                        review: {
+                          fill: '#ede9fe',
+                          stroke: '#6366f1',
+                          text: '#4f46e5'
+                        }
+                      };
+                      const colors = colorMap[project.status as keyof typeof colorMap];
+
+                      return (
+                        <g key={project.id}>
+                          <rect
+                            x={project.position.x}
+                            y={project.position.y}
+                            width="160"
+                            height="80"
+                            rx="8"
+                            fill={colors.fill}
+                            stroke={colors.stroke}
+                            strokeWidth="2"
+                            className="cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setSelectedNode(project.id)}
+                          />
+                          <text
+                            x={project.position.x + 80}
+                            y={project.position.y + 25}
+                            textAnchor="middle"
+                            className="text-sm font-semibold"
+                            fill={colors.text}
+                          >
+                            {project.name}
+                          </text>
+                          <text
+                            x={project.position.x + 80}
+                            y={project.position.y + 45}
+                            textAnchor="middle"
+                            className="text-xs"
+                            fill={colors.text}
+                          >
+                            {project.progress}% Complete
+                          </text>
+                          <circle
+                            cx={project.position.x + 140}
+                            cy={project.position.y + 20}
+                            r="6"
+                            fill={colors.stroke}
+                          />
+                        </g>
+                      );
+                    })}
                   </svg>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Info Panel */}
+          {/* Side Panel */}
           <div className="space-y-6">
             {/* Legend */}
             <Card>
@@ -338,7 +381,7 @@ export default function MindMap() {
               </CardContent>
             </Card>
 
-            {/* Summary Stats */}
+            {/* Overview */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Overview</CardTitle>
